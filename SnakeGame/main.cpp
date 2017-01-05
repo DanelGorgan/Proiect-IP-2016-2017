@@ -8,6 +8,7 @@ bool gameOver;
 int width;
 int height;
 int score;
+int miliseconds, seconds, minutes, hours;
 enum eDirection {STOP=0, LEFT,RIGHT,UP,DOWN};
 eDirection dir;
 
@@ -27,15 +28,39 @@ struct Tail
     int y[100];
     int lenght;
 } tail;
+
+void timer ()
+{
+    if (miliseconds==10)
+    {
+        ++seconds;
+        miliseconds=0;
+    }
+    if (seconds==60)
+    {
+        ++minutes;
+        seconds=0;
+    }
+    if (minutes==60)
+    {
+        ++hours;
+        minutes=0;
+    }
+    miliseconds++;
+}
 void InitGame()
 {
+    gameOver=false;
+    score=0;
     width=30;
     height=18;
     snake.x= width /2 ;
     snake.y= height / 2;
     fruit.x=rand()%width;
     fruit.y=rand()%height;
+    tail.lenght=0;
 }
+
 
 void Draw()
 {
@@ -156,21 +181,68 @@ void Logic()
     }
 }
 
+
+
 int main()
 {
-    cout<<"***********************************SNAKE GAME***********************************";
-    cout<<"                                                                    by TwinsG"<<endl;
-    cout<<"                              PRESS ANYTHING TO START                           ";
-    InitGame();
-    if (_getch())
-        while(!gameOver)
+    int choice;
+    bool gameOn = true;
+    while (gameOn != false)
+    {
+        cout << "                                SNAKE GAME                                \n";
+        cout << "                                             by TwinsG                    \n";
+        cout << "*******************************\n";
+        cout << " 1 - Start the game.\n";
+        cout << " 2 - Game modes.\n";
+        cout << " 3 - Help.\n";
+        cout << " 4 - Exit.\n";
+        cout << "*******************************\n";
+        cout << " Enter your choice and press return: ";
+        cin >> choice;
+        switch (choice)
         {
-            Draw();
-            Input();
-            Logic();
-            Sleep(75);
+        case 1:
+            InitGame();
+                while(!gameOver)
+                {
+                    timer();
+                    Draw();
+                    Input();
+                    Logic();
+                    Sleep(65);
+                }
+            system("cls");
+            cout<<"GAME OVER!"<<endl;
+            cout<<hours<<":"<<minutes<<":"<<seconds<<"."<<miliseconds<<endl;
+            system("pause");
+            system("cls");
+            break;
+        case 2:
+            system("cls");
+            cout << "Come on... it's the classic snake, no game modes.\n";
+            system("pause");
+            system("cls");
+            break;
+        case 3:
+            cout << "Ahahah, you really think I will help you?\n";
+            system("cls");
+            cout<<"No help!";
+            cout<<endl;
+            system("pause");
+            system("cls");
+            break;
+        case 4:
+            system("cls");
+            cout << "End of Program.\n";
+            gameOn = false;
+            break;
+        default:
+            cout << "Not a Valid Choice. \n";
+            cout << "Choose again.\n";
+            cin >> choice;
+            break;
         }
-    system("cls");
-    cout<<"GAME OVER!";
 
+    }
+    return 0;
 }
