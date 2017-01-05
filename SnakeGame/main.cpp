@@ -8,6 +8,8 @@ bool gameOver;
 int width;
 int height;
 int score;
+int ghost;
+int highscore[100],pos;
 int miliseconds, seconds, minutes, hours;
 enum eDirection {STOP=0, LEFT,RIGHT,UP,DOWN};
 eDirection dir;
@@ -29,7 +31,19 @@ struct Tail
     int lenght;
 } tail;
 
-void timer ()
+struct PowerUp
+{
+    int x,y;
+    float bonus, ghost;
+} powerUp;
+
+void clear_screen (){                           	//Actually, this func does not clear,
+  COORD coord = {0};                                //it just set the cursor at the
+  HANDLE h = GetStdHandle ( STD_OUTPUT_HANDLE );    // top left corner of the screen
+  SetConsoleCursorPosition ( h, coord );
+}
+
+timer ()
 {
     if (miliseconds==10)
     {
@@ -50,23 +64,27 @@ void timer ()
 }
 void InitGame()
 {
+    seconds=0;
+    minutes=0;
+    hours=0;
     gameOver=false;
     score=0;
-    width=30;
-    height=18;
+    width=60;
+    height=36;
     snake.x= width /2 ;
     snake.y= height / 2;
     fruit.x=rand()%width;
     fruit.y=rand()%height;
+    powerUp.x=100;
+    powerUp.y=100;
     tail.lenght=0;
 }
-
 
 void Draw()
 {
     int i, j;
 
-    system("cls");
+    clear_screen();
 
     for (i=0; i<width+2; i++)
         cout<<"#";
@@ -82,6 +100,8 @@ void Draw()
                 cout<<"O";
             else if (i==fruit.y && j==fruit.x)
                 cout<<"F";
+            else if (i==powerUp.y && j==powerUp.x)
+                cout<<"@";
             else
             {
                 bool ok=false;
@@ -165,9 +185,9 @@ void Logic()
         snake.y++;
         break;
     }
-    if(snake.x>width-1 || snake.x<1 || snake.y>height-1 || snake.y <0)
+    if(snake.x>width-1 || snake.x<0 || snake.y>height-1 || snake.y <0)
         gameOver=true;
-
+    if (ghost==0)
     for (int i=0; i<tail.lenght; i++)
         if (tail.x[i]==snake.x && tail.y[i]==snake.y)
             gameOver=1;
@@ -179,8 +199,47 @@ void Logic()
         fruit.x=rand()%width;
         fruit.y=rand()%height;
     }
+    if (seconds==30 || seconds==0 && minutes>0)
+    {
+        ghost=0;
+        powerUp.x=rand()%width;
+        powerUp.y=rand()%height;
+        powerUp.bonus=rand()%2;
+        powerUp.ghost=rand()%2;
+    }
+    else if (seconds==0)
+    {
+        powerUp.x=100;
+        powerUp.y=100;
+        ghost=0;
+    }
+
+    if(snake.x==powerUp.x && snake.y==powerUp.y)
+    {
+        tail.lenght++;
+        if (powerUp.bonus==1)
+        score+=106;
+        else ghost=1;
+        powerUp.x=100;
+        powerUp.y=100;
+        powerUp.bonus=rand()%2;
+        powerUp.ghost=rand()%2;
+    }
 }
 
+void HighScore( int score)
+{
+
+    highscore[++pos]=score;
+    for(int i=1; i<pos; i++)
+        for(int j=i+1; j<=pos; j++)
+            if(highscore[i]<highscore[j])
+            {
+                int aux=highscore[i];
+                highscore[i]=highscore[j];
+                highscore[j]=aux;
+            }
+}
 
 
 int main()
@@ -189,42 +248,48 @@ int main()
     bool gameOn = true;
     while (gameOn != false)
     {
-        cout << "                                SNAKE GAME                                \n";
-        cout << "                                             by TwinsG                    \n";
         cout << "*******************************\n";
         cout << " 1 - Start the game.\n";
-        cout << " 2 - Game modes.\n";
+        cout << " 2 - Highscore.\n";
         cout << " 3 - Help.\n";
         cout << " 4 - Exit.\n";
-        cout << "*******************************\n";
         cout << " Enter your choice and press return: ";
+
         cin >> choice;
+
         switch (choice)
         {
         case 1:
             InitGame();
-                while(!gameOver)
-                {
-                    timer();
-                    Draw();
-                    Input();
-                    Logic();
-                    Sleep(65);
-                }
+            while(!gameOver)
+            {
+                timer();
+                Draw();
+                Input();
+                Logic();
+                Sleep(65);
+            }
             system("cls");
             cout<<"GAME OVER!"<<endl;
             cout<<hours<<":"<<minutes<<":"<<seconds<<"."<<miliseconds<<endl;
+            HighScore(score);
+            gameOver=false;
             system("pause");
             system("cls");
             break;
         case 2:
             system("cls");
-            cout << "Come on... it's the classic snake, no game modes.\n";
+            for(int i=1; i<=5; i++)
+            {
+                cout<<i<<". "<<highscore[i]<<" ";
+                cout<<endl;
+            }
             system("pause");
             system("cls");
             break;
         case 3:
             cout << "Ahahah, you really think I will help you?\n";
+// rest of code here
             system("cls");
             cout<<"No help!";
             cout<<endl;
@@ -235,11 +300,12 @@ int main()
             system("cls");
             cout << "End of Program.\n";
             gameOn = false;
+
             break;
         default:
             cout << "Not a Valid Choice. \n";
             cout << "Choose again.\n";
-            cin >> choice;
+            system("cls");
             break;
         }
 
