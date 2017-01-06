@@ -1,14 +1,19 @@
 #include <iostream>
 #include <windows.h>
 #include<conio.h>
+#include<fstream>
 
 using namespace std;
+
+ifstream fin("highscore.txt");
+ofstream fout("highscore.txt");
+
 
 bool gameOver;
 int width;
 int height;
 int score;
-int ghost;
+int ghost, bonus;
 int highscore[100],pos;
 int miliseconds, seconds, minutes, hours;
 enum eDirection {STOP=0, LEFT,RIGHT,UP,DOWN};
@@ -37,10 +42,11 @@ struct PowerUp
     float bonus, ghost;
 } powerUp;
 
-void clear_screen (){                           	//Actually, this func does not clear,
-  COORD coord = {0};                                //it just set the cursor at the
-  HANDLE h = GetStdHandle ( STD_OUTPUT_HANDLE );    // top left corner of the screen
-  SetConsoleCursorPosition ( h, coord );
+void clear_screen ()
+{
+    COORD coord = {0};
+    HANDLE h = GetStdHandle ( STD_OUTPUT_HANDLE );
+    SetConsoleCursorPosition ( h, coord );
 }
 
 timer ()
@@ -78,6 +84,7 @@ void InitGame()
     powerUp.x=100;
     powerUp.y=100;
     tail.lenght=0;
+    dir=STOP;
 }
 
 void Draw()
@@ -86,7 +93,7 @@ void Draw()
 
     clear_screen();
 
-    for (i=0; i<width+2; i++)
+    for (i=0; i<width+1; i++)
         cout<<"#";
     cout<<endl;
 
@@ -94,7 +101,7 @@ void Draw()
     {
         for(j=0; j<width; j++)
         {
-            if(j==0)
+            if(j==0 || j==width-1)
                 cout<<"#";
             if (i==snake.y && j==snake.x)
                 cout<<"O";
@@ -115,13 +122,11 @@ void Draw()
                 }
                 if (ok==false) cout<<" ";
             }
-            if (j==width-1)
-                cout<<"#";
         }
         cout<<endl;
     }
 
-    for (i=0; i<width+2; i++)
+    for (i=0; i<width+1; i++)
         cout<<"#";
     cout<<endl;
     cout<<"Score: "<<score;
@@ -134,17 +139,23 @@ void Input()
         switch(_getch())
         {
         case 'a':
-            dir=LEFT;
+            if (dir!=RIGHT)
+                dir=LEFT;
             break;
         case 'd':
-            dir=RIGHT;
+            if (dir!=LEFT)
+                dir=RIGHT;
             break;
+        case 's':
             if(dir!=UP)
-            case 's':
-            dir=DOWN;
+                dir=DOWN;
             break;
         case 'w':
-            dir=UP;
+            if(dir!=DOWN)
+                dir=UP;
+            break;
+        case 'p':
+            system("pause");
             break;
         case 'x':
             gameOver=true;
@@ -185,40 +196,52 @@ void Logic()
         snake.y++;
         break;
     }
-    if(snake.x>width-1 || snake.x<0 || snake.y>height-1 || snake.y <0)
-        gameOver=true;
+
     if (ghost==0)
-    for (int i=0; i<tail.lenght; i++)
-        if (tail.x[i]==snake.x && tail.y[i]==snake.y)
-            gameOver=1;
+        if(snake.x>width-2 || snake.x<0 || snake.y>height-1 || snake.y <0)
+            gameOver=true;
+    if (ghost==1)
+    {
+        if (snake.x>=width-1) snake.x=0;
+        else if (snake.x<0) snake.x=width-2;
+        if (snake.y>=height) snake.y=0;
+        else if (snake.y<0) snake.y=height-1;
+    }
+
+    if (ghost==0)
+        for (int i=0; i<tail.lenght; i++)
+            if (tail.x[i]==snake.x && tail.y[i]==snake.y)
+                gameOver=1;
 
     if(snake.x==fruit.x && snake.y==fruit.y)
     {
         tail.lenght++;
-        score+=10;
+        if (bonus==1)
+            score+=50;
+        else score+=10;
         fruit.x=rand()%width;
         fruit.y=rand()%height;
     }
-    if (seconds==30 || seconds==0 && minutes>0)
+    if (seconds==30 && miliseconds==5 || seconds==0 && miliseconds==5 && minutes>0)
     {
         ghost=0;
+        bonus=0;
         powerUp.x=rand()%width;
         powerUp.y=rand()%height;
         powerUp.bonus=rand()%2;
         powerUp.ghost=rand()%2;
     }
-    else if (seconds==0)
+    else if (seconds==15 || seconds==45)
     {
         powerUp.x=100;
         powerUp.y=100;
-        ghost=0;
     }
 
     if(snake.x==powerUp.x && snake.y==powerUp.y)
     {
         tail.lenght++;
         if (powerUp.bonus==1)
-        score+=106;
+            bonus=1;
         else ghost=1;
         powerUp.x=100;
         powerUp.y=100;
@@ -230,14 +253,20 @@ void Logic()
 void HighScore( int score)
 {
 
-    highscore[++pos]=score;
-    for(int i=1; i<pos; i++)
-        for(int j=i+1; j<=pos; j++)
+    highscore[pos++]=score;
+    for(int i=0; i<pos-1; i++)
+        for(int j=i+1; j<pos; j++)
             if(highscore[i]<highscore[j])
             {
                 int aux=highscore[i];
                 highscore[i]=highscore[j];
                 highscore[j]=aux;
+            }
+
+            for(int i=0; i<5; i++)
+            {
+                fout<<i<<". "<<highscore[i]<<" ";
+                fout<<endl;
             }
 }
 
@@ -267,11 +296,9 @@ int main()
                 Draw();
                 Input();
                 Logic();
-                Sleep(65);
             }
             system("cls");
             cout<<"GAME OVER!"<<endl;
-            cout<<hours<<":"<<minutes<<":"<<seconds<<"."<<miliseconds<<endl;
             HighScore(score);
             gameOver=false;
             system("pause");
@@ -279,8 +306,9 @@ int main()
             break;
         case 2:
             system("cls");
-            for(int i=1; i<=5; i++)
+            for(int i=0; i<5; i++)
             {
+                fin>>i>>highscore[i];
                 cout<<i<<". "<<highscore[i]<<" ";
                 cout<<endl;
             }
@@ -289,7 +317,6 @@ int main()
             break;
         case 3:
             cout << "Ahahah, you really think I will help you?\n";
-// rest of code here
             system("cls");
             cout<<"No help!";
             cout<<endl;
