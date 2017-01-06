@@ -316,9 +316,9 @@ int main()
             system("cls");
             break;
         case 3:
-            cout << "Ahahah, you really think I will help you?\n";
             system("cls");
-            cout<<"No help!";
+             cout << "No help, It's the classic snake game...\n";
+            cout << "We will write later the description of the game, the powerUps etc. \n";
             cout<<endl;
             system("pause");
             system("cls");
