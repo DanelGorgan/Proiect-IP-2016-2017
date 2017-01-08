@@ -1,7 +1,7 @@
 #include <iostream>
 #include <windows.h>
-#include<conio.h>
-#include<fstream>
+#include <conio.h>
+#include <fstream>
 
 using namespace std;
 
@@ -9,11 +9,14 @@ ifstream fin("highscore.txt");
 ofstream fout("highscore.txt");
 
 
+
 bool gameOver;
+bool gameOn = true;
+char choice, choice1;
 int width;
 int height;
 int score;
-int ghost, bonus;
+int ghost, bonus, cut, slow, fast;
 int highscore[100],pos;
 int miliseconds, seconds, minutes, hours;
 enum eDirection {STOP=0, LEFT,RIGHT,UP,DOWN};
@@ -39,7 +42,7 @@ struct Tail
 struct PowerUp
 {
     int x,y;
-    float bonus, ghost;
+    float bonus, ghost, cut, slow, fast;
 } powerUp;
 
 void clear_screen ()
@@ -86,6 +89,20 @@ void InitGame()
     tail.lenght=0;
     dir=STOP;
 }
+void Board (int x, int y)
+{
+    if (x==6 && y==width-1)
+    {
+        cout<<"    Powerup: ";
+        if (ghost) cout<<"GHOST";
+        else if (bonus) cout<<"BONUS";
+        else if (cut) cout<<"CUT";
+        else if (slow) cout<<"SLOW";
+        else if (fast) cout<<"FAST";
+        else cout<<"NONE";
+    }
+    if (x==7 && y==width-1) cout<<"    SCORE: "<<score;
+}
 
 void Draw()
 {
@@ -93,7 +110,7 @@ void Draw()
 
     clear_screen();
 
-    for (i=0; i<width+1; i++)
+    for (i=0; i<width+2; i++)
         cout<<"#";
     cout<<endl;
 
@@ -101,7 +118,7 @@ void Draw()
     {
         for(j=0; j<width; j++)
         {
-            if(j==0 || j==width-1)
+            if(j==0)
                 cout<<"#";
             if (i==snake.y && j==snake.x)
                 cout<<"O";
@@ -122,14 +139,17 @@ void Draw()
                 }
                 if (ok==false) cout<<" ";
             }
+            if(j==width-1)
+                cout<<"#";
+            Board(i, j);
         }
         cout<<endl;
     }
 
-    for (i=0; i<width+1; i++)
+    for (i=0; i<width+2; i++)
         cout<<"#";
     cout<<endl;
-    cout<<"Score: "<<score;
+
 }
 
 void Input()
@@ -224,17 +244,21 @@ void Logic()
     }
     if (seconds==30 && miliseconds==5 || seconds==0 && miliseconds==5 && minutes>0)
     {
-        ghost=0;
-        bonus=0;
+        Sleep(0);
+        bonus=ghost=cut=fast=slow=0;
         powerUp.x=rand()%width;
         powerUp.y=rand()%height;
-        powerUp.bonus=rand()%2;
-        powerUp.ghost=rand()%2;
+        powerUp.bonus=rand()%5;
+        powerUp.ghost=rand()%5;
+        powerUp.cut=rand()%5;
+        powerUp.slow=rand()%5;
+        powerUp.fast=rand()%5;
     }
     else if (seconds==15 || seconds==45)
     {
         powerUp.x=100;
         powerUp.y=100;
+
     }
 
     if(snake.x==powerUp.x && snake.y==powerUp.y)
@@ -242,98 +266,153 @@ void Logic()
         tail.lenght++;
         if (powerUp.bonus==1)
             bonus=1;
-        else ghost=1;
+        else if (powerUp.ghost==1)
+            ghost=1;
+        else if (powerUp.cut==1)
+            cut=1;
+        else if (powerUp.fast==1)
+            fast=1;
+        else slow=1;
+        if (cut==1)
+            if (tail.lenght<5) tail.lenght=0;
+            else
+                tail.lenght= tail.lenght-5;
         powerUp.x=100;
         powerUp.y=100;
-        powerUp.bonus=rand()%2;
-        powerUp.ghost=rand()%2;
+        powerUp.bonus=rand()%5;
+        powerUp.ghost=rand()%5;
+        powerUp.cut=rand()%5;
+        powerUp.slow=rand()%5;
+        powerUp.fast=rand()%5;
     }
 }
 
 void HighScore( int score)
 {
+    if(score!=0)
+    {
+        highscore[++pos]=score;
+        for(int i=1; i<pos; i++)
+            for(int j=i+1; j<=pos; j++)
+                if(highscore[i]<highscore[j])
+                {
+                    int aux=highscore[i];
+                    highscore[i]=highscore[j];
+                    highscore[j]=aux;
+                }
 
-    highscore[pos++]=score;
-    for(int i=0; i<pos-1; i++)
-        for(int j=i+1; j<pos; j++)
-            if(highscore[i]<highscore[j])
-            {
-                int aux=highscore[i];
-                highscore[i]=highscore[j];
-                highscore[j]=aux;
-            }
-
-            for(int i=0; i<5; i++)
-            {
-                fout<<i<<". "<<highscore[i]<<" ";
-                fout<<endl;
-            }
+        for(int i=1; i<=5; i++)
+        {
+            fout<<i<<" "<<highscore[i];
+            fin>>i>>highscore[i];
+            fout<<endl;
+        }
+    }
 }
 
 
 int main()
 {
-    int choice;
-    bool gameOn = true;
     while (gameOn != false)
     {
-        cout << "*******************************\n";
-        cout << " 1 - Start the game.\n";
-        cout << " 2 - Highscore.\n";
-        cout << " 3 - Help.\n";
-        cout << " 4 - Exit.\n";
+        cout << "                                SNAKE GAME                                     \n";
+        cout << "                                                          by TwinsG            \n";
+        cout << "*******************************************************************************\n";
+        cout << "                            1 - Game Modes\n";
+        cout << "                            2 - Highscore.\n";
+        cout << "                            3 - Help.\n";
+        cout << "                            4 - Exit.\n";
+        cout << "*******************************************************************************\n";
         cout << " Enter your choice and press return: ";
 
         cin >> choice;
-
+        cout<<'\n';
         switch (choice)
         {
-        case 1:
-            InitGame();
-            while(!gameOver)
-            {
-                timer();
-                Draw();
-                Input();
-                Logic();
-            }
+        case '1':
             system("cls");
-            cout<<"GAME OVER!"<<endl;
-            HighScore(score);
-            gameOver=false;
+            cout << "                                SNAKE GAME                                     \n";
+            cout << "                                                          by TwinsG            \n";
+            cout << "*******************************************************************************\n";
+            cout<<" 1 - Single Player\n";
+            cout<<" 2 - Player vs AI\n\n\n";
+            cout << "*******************************************************************************\n";
+            cout<<" Enter your choice and press return: ";
+            cin>>choice1;
+            if (choice1=='1')
+            {
+                InitGame();
+                system("cls");
+                while(!gameOver)
+                {
+                    timer();
+                    Draw();
+                    Input();
+                    Logic();
+                    if (slow==1)Sleep(100);
+                    else if (fast==1) Sleep(0);
+                    else if (slow==0 && fast==0) Sleep(50);
+                }
+
+                system("cls");
+                cout<<"GAME OVER!"<<endl;
+                HighScore(score);
+                gameOver=false;
+                system("pause");
+                system("cls");
+            }
+            else if (choice1=='2')
+            {
+            system("cls");
+            cout << "                                SNAKE GAME                                     \n";
+            cout << "                                                          by TwinsG            \n";
+            cout << "*******************************************************************************\n";
+            cout<<" THIS GAME MODE WILL BE AVAILABLE SOON\n\n\n\n";
+            cout << "*******************************************************************************\n";
             system("pause");
             system("cls");
+            }
+            else system("cls");
             break;
-        case 2:
-            system("cls");
-            for(int i=0; i<5; i++)
+        case '2':
+            system("cls");cout << "                                SNAKE GAME                                     \n";
+            cout << "                                                          by TwinsG            \n";
+            cout << "*******************************************************************************\n";
+             for(int i=1; i<=5; i++)
             {
-                fin>>i>>highscore[i];
                 cout<<i<<". "<<highscore[i]<<" ";
                 cout<<endl;
             }
+            cout << "*******************************************************************************\n";
             system("pause");
             system("cls");
             break;
-        case 3:
+        case '3':
             system("cls");
-             cout << "No help, It's the classic snake game...\n";
-            cout << "We will write later the description of the game, the powerUps etc. \n";
+             cout << "                                SNAKE GAME                                     \n";
+            cout << "                                                          by TwinsG            \n";
+            cout << "*******************************************************************************\n";
+            cout << "No help, It's the classic snake game...\n";
+            cout << "We will write later the description of the game, the powerUps etc. \n\n\n";
+            cout << "*******************************************************************************\n";
             cout<<endl;
             system("pause");
             system("cls");
             break;
-        case 4:
+        case '4':
             system("cls");
-            cout << "End of Program.\n";
+             cout << "                                SNAKE GAME                                     \n";
+            cout << "                                                          by TwinsG            \n";
+            cout << "*******************************************************************************\n";
+            cout << "BYE, BYE\n\n\n\n";
+            cout << "*******************************************************************************\n";
+            cout<<endl;
             gameOn = false;
-
             break;
         default:
-            cout << "Not a Valid Choice. \n";
-            cout << "Choose again.\n";
             system("cls");
             break;
+
         }
 
     }
