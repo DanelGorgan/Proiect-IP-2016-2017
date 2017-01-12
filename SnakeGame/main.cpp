@@ -72,6 +72,7 @@ timer ()
 }
 void InitGame()
 {
+
     seconds=0;
     minutes=0;
     hours=0;
@@ -335,6 +336,7 @@ void HighScore(int score, char name[100])
 
 int main()
 {
+
     HANDLE color=GetStdHandle(STD_OUTPUT_HANDLE);
     SetConsoleTextAttribute(color,12);
 
@@ -349,7 +351,6 @@ int main()
         cout << "                            4 - Exit.\n";
         cout << "*******************************************************************************\n";
         cout << " Enter your choice and press return: ";
-
         cin >> choice;
         cout<<'\n';
         switch (choice)
