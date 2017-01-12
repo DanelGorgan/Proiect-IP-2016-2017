@@ -92,7 +92,6 @@ void InitGame()
     cut=0;
     slow=0;
     fast=0;
-    srand(time(NULL));
 }
 void Board (int x, int y)
 {
