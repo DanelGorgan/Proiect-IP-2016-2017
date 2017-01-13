@@ -10,11 +10,11 @@ using namespace std;
 bool gameOver;
 bool gameOn = true;
 bool ok=false;
-char choice, choice1, nameChar[7][20]= {"Bpatrut ","DoubleG ","FREE ","Thek ","BogdanP "}, name[6];;
+char choice, choice1, nameChar[7][100]= {"Bpatrut ","DoubleG ","FREE ","Thek ","BogdanP "}, name[6];;
 int width;
 int height;
 int score;
-int ghost, bonus, cut, slow, fast;
+int ghost, bonus, cut, speed;
 int highscore[6]= {50,30,20,10,0},pos=5, pos1=5;
 int miliseconds, seconds, minutes, hours;
 enum eDirection {STOP=0, LEFT,RIGHT,UP,DOWN};
@@ -41,7 +41,7 @@ struct Tail
 struct PowerUp
 {
     int x,y;
-    float bonus, ghost, cut, slow, fast;
+    float bonus, ghost, cut,speed;
 } powerUp;
 
 void clear_screen ()
@@ -53,21 +53,34 @@ void clear_screen ()
 
 timer ()
 {
-    if (miliseconds==10)
+    if (speed==0)
     {
-        ++seconds;
-        miliseconds=0;
+        if (miliseconds==10)
+        {
+            ++seconds;
+            miliseconds=0;
+        }
     }
-    if (seconds==60)
+
+    if (speed==1)
+        if (miliseconds==10)
+        {
+            seconds+=3;
+            miliseconds=0;
+        }
+
+    if (seconds==60 || seconds>60)
     {
         ++minutes;
         seconds=0;
     }
+
     if (minutes==60)
     {
         ++hours;
         minutes=0;
     }
+
     miliseconds++;
 }
 void InitGame()
@@ -90,23 +103,27 @@ void InitGame()
     dir=STOP;
     ghost=0;
     cut=0;
-    slow=0;
-    fast=0;
+    speed=0;
+    srand(time(0));
 }
 void Board (int x, int y)
 {
     if (x==6 && y==width-1)
     {
-        cout<<"   Powerup: ";
+        cout<<"  Powerup: ";
         if (ghost) cout<<"GHOST";
         else if (bonus) cout<<"BONUS";
-        else if (cut) cout<<"CUT  ";
-        else if (slow) cout<<"SLOW ";
-        else if (fast) cout<<"FAST ";
+        else if (cut)cout<<"CUT  ";
+        else if (speed) cout<<"SLOW ";
         else cout<<"NONE ";
     }
     if (x==7 && y==width-1)
         cout<<"  SCORE: "<<score;
+
+    if (x==8 && y==width-1)
+        if(tail.lenght>9)
+        cout<<"  LENGHT: "<<tail.lenght;
+    else cout<<"  LENGHT:  "<<tail.lenght;
 }
 
 void Draw()
@@ -124,16 +141,20 @@ void Draw()
         for(j=0; j<width; j++)
         {
             if(j==0)
-                cout << (unsigned char)(219);
+            {
+                SetConsoleTextAttribute(color,1);
+                cout<<(unsigned char)(219);
+            }
             if (i==snake.y && j==snake.x)
             {
-                SetConsoleTextAttribute(color,5);
+                SetConsoleTextAttribute(color,4);
                 cout<<(unsigned char)(219);
                 SetConsoleTextAttribute(color,12);
             }
+
             else if (i==fruit.y && j==fruit.x)
             {
-                SetConsoleTextAttribute(color,1);
+                SetConsoleTextAttribute(color,2);
                 cout<<"O";
                 SetConsoleTextAttribute(color,12);
             }
@@ -151,7 +172,7 @@ void Draw()
 
                     if (tail.x[k]==j && tail.y[k]==i)
                     {
-                        SetConsoleTextAttribute(color,21);
+                        SetConsoleTextAttribute(color,2);
                         cout<<(unsigned char)(219);
                         SetConsoleTextAttribute(color,12);
                         ok=true;
@@ -161,7 +182,10 @@ void Draw()
             }
 
             if(j==width-1)
+            {
+                SetConsoleTextAttribute(color,1);
                 cout<<(unsigned char)(219);
+            }
             Board(i, j);
         }
         cout<<endl;
@@ -169,6 +193,7 @@ void Draw()
 
     for (i=0; i<width+2; i++)
         cout<<(unsigned char)(219);
+    cout<<'\n';
 
 }
 
@@ -179,19 +204,27 @@ void Input()
         switch(_getch())
         {
         case 'a':
-            if (dir!=RIGHT)
+            if (tail.lenght==0)
+                dir=LEFT;
+            else if (dir!=RIGHT)
                 dir=LEFT;
             break;
         case 'd':
-            if (dir!=LEFT)
+            if (tail.lenght==0)
+                dir=RIGHT;
+            else if (dir!=LEFT)
                 dir=RIGHT;
             break;
         case 's':
-            if(dir!=UP)
+            if (tail.lenght==0)
+                dir=DOWN;
+            else if(dir!=UP)
                 dir=DOWN;
             break;
         case 'w':
-            if(dir!=DOWN)
+            if (tail.lenght==0)
+                dir=UP;
+            else if(dir!=DOWN)
                 dir=UP;
             break;
         case 'p':
@@ -244,15 +277,14 @@ void Logic()
     if (ghost==1)
     {
         if (snake.x>width-1) snake.x=0;
-        else if (snake.x<0) snake.x=width-2;
+        else if (snake.x<0) snake.x=width-1;
         if (snake.y>=height) snake.y=0;
         else if (snake.y<0) snake.y=height-1;
     }
 
-    if (ghost==0)
-        for (int i=0; i<tail.lenght; i++)
-            if (tail.x[i]==snake.x && tail.y[i]==snake.y)
-                gameOver=true;
+    for (int i=0; i<tail.lenght; i++)
+        if (tail.x[i]==snake.x && tail.y[i]==snake.y)
+            gameOver=true;
 
     if(snake.x==fruit.x && snake.y==fruit.y)
     {
@@ -260,20 +292,19 @@ void Logic()
         if (bonus==1)
             score+=50;
         else score+=10;
+        srand(time(0));
         fruit.x=rand()%width;
         fruit.y=rand()%height;
     }
-    if (seconds%20==0 && miliseconds==5 || seconds==0 && miliseconds==5 && minutes>0)
+    if ((seconds==30 && miliseconds==4) || (seconds==0 && miliseconds==4 && minutes>0))
     {
-        Sleep(0);
-        bonus=ghost=cut=fast=slow=0;
+        bonus=ghost=cut=speed=0;
         powerUp.x=rand()%width;
         powerUp.y=rand()%height;
-        powerUp.bonus=rand()%5;
-        powerUp.ghost=rand()%5;
-        powerUp.cut=rand()%5;
-        powerUp.slow=rand()%5;
-        powerUp.fast=rand()%5;
+        powerUp.bonus=rand()%4;
+        powerUp.ghost=rand()%4;
+        powerUp.cut=rand()%4;
+        powerUp.speed=rand()%4;
     }
     else if (seconds==15 || seconds==45)
     {
@@ -286,24 +317,22 @@ void Logic()
         tail.lenght++;
         if (powerUp.bonus==1)
             bonus=1;
-        else if (powerUp.ghost==1)
-            ghost=1;
+        else if (powerUp.speed==1)
+            speed=1;
         else if (powerUp.cut==1)
             cut=1;
-        else if (powerUp.fast==1)
-            fast=1;
-        else slow=1;
+        else ghost=1;
+
         if (cut==1)
             if (tail.lenght<5) tail.lenght=0;
             else
                 tail.lenght= tail.lenght-5;
         powerUp.x=100;
         powerUp.y=100;
-        powerUp.bonus=rand()%5;
-        powerUp.ghost=rand()%5;
-        powerUp.cut=rand()%5;
-        powerUp.slow=rand()%5;
-        powerUp.fast=rand()%5;
+        powerUp.bonus=rand()%4;
+        powerUp.ghost=rand()%4;
+        powerUp.cut=rand()%4;
+        powerUp.speed=rand()%4;
     }
 }
 
@@ -336,11 +365,12 @@ void HighScore(int score, char name[100])
 int main()
 {
 
-    HANDLE color=GetStdHandle(STD_OUTPUT_HANDLE);
-    SetConsoleTextAttribute(color,12);
+
 
     while (gameOn != false)
     {
+        HANDLE color=GetStdHandle(STD_OUTPUT_HANDLE);
+        SetConsoleTextAttribute(color,3);
         cout << "                                SNAKE GAME                                     \n";
         cout << "                                                          by TwinsG            \n";
         cout << "*******************************************************************************\n";
@@ -374,9 +404,9 @@ int main()
                     Draw();
                     Input();
                     Logic();
-                    if (slow==1)Sleep(100);
-                    else if (fast==1) Sleep(0);
-                    else if (slow==0 && fast==0) Sleep(50);
+                    if (speed==1)Sleep(100);
+                    else Sleep(10);
+                    //else if (slow==0 && fast==0) Sleep(50);
                 }
                 system("cls");
                 cout<<"GAME OVER!"<<endl;
