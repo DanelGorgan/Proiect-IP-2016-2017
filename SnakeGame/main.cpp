@@ -50,6 +50,14 @@ void clear_screen ()
     HANDLE h = GetStdHandle ( STD_OUTPUT_HANDLE );
     SetConsoleCursorPosition ( h, coord );
 }
+   void hidecursor()
+{
+   HANDLE consoleHandle = GetStdHandle(STD_OUTPUT_HANDLE);
+   CONSOLE_CURSOR_INFO info;
+   info.dwSize = 100;
+   info.bVisible = FALSE;
+   SetConsoleCursorInfo(consoleHandle, &info);
+}
 
 timer ()
 {
@@ -364,9 +372,7 @@ void HighScore(int score, char name[100])
 
 int main()
 {
-
-
-
+    hidecursor();
     while (gameOn != false)
     {
         HANDLE color=GetStdHandle(STD_OUTPUT_HANDLE);
